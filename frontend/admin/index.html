@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPQ Admin - Azure Managed</title>
+    <style>
+        :root { --azure: #0078d4; --bg: #f3f2f1; --border: #e1dfdd; --danger: #d13438; --tag-bg: #e1f0fe; --tag-text: #004578; --whatsapp: #25D366; --gmail: #DB4437; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #323130; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { border-bottom: 2px solid var(--azure); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; }
+        .settings-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #faf9f8; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .settings-bar label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 5px; }
+        .settings-bar input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: #edebe9; cursor: pointer; font-weight: 600; border-radius: 4px; }
+        .tab-btn.active { background: var(--azure); color: white; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .tag { padding: 4px 10px; background: #f3f2f1; border-radius: 15px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; }
+        .tag.active { background: var(--tag-bg); color: var(--tag-text); border-color: var(--azure); font-weight: bold; }
+        .prod-card { border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 20px; position: relative; }
+        .prod-header { display: grid; grid-template-columns: 1.5fr 1fr 80px auto; gap: 15px; margin-bottom: 15px; align-items: start; }
+        .price-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 8px; background: #faf9f8; padding: 8px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f3f2f1; padding: 12px; border: 1px solid var(--border); font-size: 12px; text-align: left; }
+        td { border: 1px solid var(--border); padding: 12px; vertical-align: top; }
+
+        /* ✨ 修改后的链接样式 */
+        .contact-link { text-decoration: none; color: var(--azure); font-size: 13px; display: block; margin-top: 3px; }
+        .contact-link:hover { text-decoration: underline; }
+        .wa-text { color: #128C7E; font-weight: bold; }
+        .gm-text { color: #DB4437; font-weight: bold; }
+
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; }
+        .btn-primary { background: var(--azure); color: white; }
+        .btn-danger { color: var(--danger); background: none; border: 1px solid var(--danger); }
+        
+        .filter-bar { background:#f3f2f1; padding:15px; margin-bottom:15px; border-radius:4px; display:flex; gap:15px; align-items:center; font-size:13px; }
+        .footer { position: sticky; bottom: 0; background: white; padding: 20px; border-top: 1px solid #ddd; text-align: right; margin-top: 20px; z-index: 10; }
+        .note-area { background: #fff4ce; padding: 10px; border-radius: 4px; border-left: 4px solid #ffb900; margin-bottom: 15px; }
+        .note-area label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #857500; }
+        .note-area textarea { width: 100%; border: 1px solid #d2c6a3; background: transparent; padding: 5px; font-family: inherit; font-size: 13px; resize: vertical; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header"><h2>CPQ Manager <small style="font-weight:normal; font-size:12px; color:#666;">(v6.1 Azure Note Edition)</small></h2></div>
+
+    <div class="settings-bar">
+        <div><label>LANGUAGES (CSV)</label><input type="text" id="conf-langs"></div>
+        <div><label>CURRENCY SYMBOL</label><input type="text" id="conf-currency"></div>
+        <div><label>TAX %</label><input type="number" id="conf-tax"></div>
+        <div><label>BRAND NAME</label><input type="text" id="conf-brand"></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('langs')">1. Library (I18N)</button>
+        <button class="tab-btn" onclick="showTab('catalog')">2. Product Config</button>
+        <button class="tab-btn" onclick="showTab('orders')">3. Sales Orders</button>
+    </div>
+
+    <div id="panel-langs" class="panel active">
+        <div class="note-area">
+            <label>📝 LIBRARY OPERATION NOTE</label>
+            <textarea id="note-langs" placeholder="Enter notes for Operation here..."></textarea>
+        </div>
+        <table id="lang-table">
+            <thead id="lang-head"></thead>
+            <tbody id="lang-body"></tbody>
+        </table>
+        <button class="btn btn-primary" style="margin-top:15px;" onclick="addLibKey()">+ Add Translation Key</button>
+    </div>
+
+    <div id="panel-catalog" class="panel">
+        <div class="note-area">
+            <label>📝 PRODUCT CONFIG OPERATION NOTE</label>
+            <textarea id="note-catalog" placeholder="Enter notes for Operation here..."></textarea>
+        </div>
+        <div id="catalog-list"></div>
+        <button class="btn btn-primary" style="width:100%; padding:20px; border:2px dashed var(--azure); background:white; color:var(--azure);" onclick="addProd()">+ Add New Product Category</button>
+    </div>
+
+    <div id="panel-orders" class="panel">
+        <div class="note-area">
+            <label>📝 SALES VIEW OPERATION NOTE</label>
+            <textarea id="note-orders" placeholder="Enter notes for Operation here..."></textarea>
+        </div>
+        <div class="filter-bar">
+            <label>Year:</label><select id="sel-year" onchange="renderOrders()"></select>
+            <label>Month:</label><select id="sel-month" onchange="renderOrders()"></select>
+            <div style="margin-left:auto; font-weight:bold; color:var(--azure);">Monthly Revenue: <span id="month-total">0</span></div>
+        </div>
+        <div id="orders-list"></div>
+    </div>
+
+    <div class="footer">
+        <span id="save-status" style="margin-right:20px; font-weight:bold; color:var(--success);"></span>
+        <button class="btn btn-primary" style="padding:12px 30px;" onclick="saveToAzure()">SYNC DATA TO AZURE</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://web-cpq-api-hufgbkfvbceyb3cj.malaysiawest-01.azurewebsites.net/api.php";
+    let cpq = { settings: { langs: [], currency: "$", tax_rate: 0, notes: {} }, catalog: {} };
+    let langs = {};
+    let orders = [];
+
+    async function load() {
+        const t = Date.now();
+        const [r1, r2, r3] = await Promise.all([
+            fetch(`${API_URL}?type=cpq&t=${t}`),
+            fetch(`${API_URL}?type=langs&t=${t}`),
+            fetch(`${API_URL}?type=orders&t=${t}`)
+        ]);
+        cpq = await r1.json(); 
+        langs = await r2.json(); 
+        const rawOrders = await r3.json();
+        orders = Array.isArray(rawOrders) ? rawOrders : []; 
+
+        document.getElementById('conf-langs').value = cpq.settings.langs.join(',');
+        document.getElementById('conf-currency').value = cpq.settings.currency;
+        document.getElementById('conf-tax').value = cpq.settings.tax_rate;
+        document.getElementById('conf-brand').value = cpq.settings.brand_name;
+        
+        if(!cpq.settings.notes) cpq.settings.notes = {};
+        document.getElementById('note-langs').value = cpq.settings.notes.langs || "";
+        document.getElementById('note-catalog').value = cpq.settings.notes.catalog || "";
+        document.getElementById('note-orders').value = cpq.settings.notes.orders || "";
+
+        initOrderFilters(); renderLangs();
+    }
+
+    function showTab(id) {
+        document.querySelectorAll('.panel, .tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('panel-' + id).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(id === 'catalog') renderCatalog();
+        if(id === 'orders') renderOrders();
+    }
+
+    function renderLangs() {
+        const cols = cpq.settings.langs;
+        document.getElementById('lang-head').innerHTML = `<tr><th>Key ID</th>${cols.map(c => `<th>${c.toUpperCase()}</th>`).join('')}<th>Action</th></tr>`;
+        document.getElementById('lang-body').innerHTML = Object.keys(langs).map(k => `
+            <tr>
+                <td><input type="text" value="${k}" onblur="renameTag('${k}', this.value)" style="width:100%; border:none; font-weight:bold;"></td>
+                ${cols.map(c => `<td><input type="text" value="${langs[k][c]||''}" onchange="langs['${k}']['${c}']=this.value" style="width:100%; border:none;"></td>`).join('')}
+                <td style="text-align:center;"><button class="btn-danger" onclick="deleteTag('${k}')" style="border:none;">×</button></td>
+            </tr>
+        `).join('');
+    }
+    function addLibKey() { const k = prompt("Key ID:"); if(k && !langs[k]) { langs[k]={}; renderLangs(); } }
+    function deleteTag(k) { if(confirm("Delete?")) { delete langs[k]; renderLangs(); } }
+    function renameTag(oldK, newK) { if(newK && newK!==oldK) { langs[newK]=langs[oldK]; delete langs[oldK]; renderLangs(); } }
+
+    function renderCatalog() {
+        const container = document.getElementById('catalog-list');
+        container.innerHTML = "";
+        Object.keys(cpq.catalog).sort((a,b)=>cpq.catalog[a].sort - cpq.catalog[b].sort).forEach(id => {
+            const p = cpq.catalog[id];
+            const card = document.createElement('div'); card.className = 'prod-card';
+            card.innerHTML = `
+                <div class="prod-header">
+                    <div><label>PRODUCT ID</label><input type="text" value="${id}" onblur="renameProd('${id}', this.value)"></div>
+                    <div><label>I18N LABEL (CAT_)</label>
+                        <select onchange="cpq.catalog['${id}'].i18n=this.value" style="width:100%; padding:8px;">
+                            ${Object.keys(langs).filter(k => k.startsWith('CAT_')).map(lk => `<option value="${lk}" ${lk==p.i18n?'selected':''}>${lk}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div><label>SORT</label><input type="number" value="${p.sort||0}" onchange="cpq.catalog['${id}'].sort=parseInt(this.value)"></div>
+                    <button class="btn-danger" onclick="deleteProd('${id}')">DELETE</button>
+                </div>
+                <div id="items-${id}">${Object.entries(p.items).map(([n,v]) => `
+                    <div class="price-row">
+                        <input type="text" value="${n}" onblur="renameSlot('${id}','${n}',this.value)">
+                        <input type="number" value="${v}" onchange="cpq.catalog['${id}'].items['${n}']=parseInt(this.value)">
+                        <button class="btn-danger" onclick="deleteSlot('${id}','${n}')">×</button>
+                    </div>`).join('')}
+                </div>
+                <button class="btn btn-primary" style="font-size:11px;" onclick="addPriceSlot('${id}')">+ Add Price Item</button>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleTag(pid, tag) {
+        if(!cpq.catalog[pid].segments) cpq.catalog[pid].segments = [];
+        let ts = cpq.catalog[pid].segments;
+        cpq.catalog[pid].segments = ts.includes(tag) ? ts.filter(t => t !== tag) : [...ts, tag];
+        renderCatalog(); 
+    }
+
+    function addProd() { const id = "p_"+Date.now().toString().slice(-4); cpq.catalog[id]={i18n:"",sort:9,segments:[],items:{"Standard Item":0}}; renderCatalog(); }
+    function deleteProd(id) { if(confirm("Delete?")) { delete cpq.catalog[id]; renderCatalog(); } }
+    function renameProd(old, next) { if(next && next!==old) { cpq.catalog[next]=cpq.catalog[old]; delete cpq.catalog[old]; renderCatalog(); } }
+    function addPriceSlot(id) { const n=prompt("Name:"); if(n) { cpq.catalog[id].items[n]=0; renderCatalog(); } }
+    function deleteSlot(id, s) { delete cpq.catalog[id].items[s]; renderCatalog(); }
+    function renameSlot(id, old, next) { if(next && next!==old) { cpq.catalog[id].items[next]=cpq.catalog[id].items[old]; delete cpq.catalog[id].items[old]; renderCatalog(); } }
+
+    function initOrderFilters() {
+        const now = new Date();
+        const sy = document.getElementById('sel-year'); const sm = document.getElementById('sel-month');
+        sy.innerHTML = ""; sm.innerHTML = "";
+        for(let i=0; i<3; i++) sy.innerHTML += `<option value="${now.getFullYear()-i}">${now.getFullYear()-i}</option>`;
+        for(let i=1; i<=12; i++) sm.innerHTML += `<option value="${i}" ${i===(now.getMonth()+1)?'selected':''}>${i<10?'0'+i:i}</option>`;
+    }
+
+    // ✨ 这里的渲染逻辑修改：显示文本号码/Email，a 标签直接跳转 Gmail/WA
+    function renderOrders() {
+        const y = document.getElementById('sel-year').value;
+        const m = document.getElementById('sel-month').value.padStart(2, '0');
+        const container = document.getElementById('orders-list');
+        let monthlySum = 0;
+        const filtered = orders.filter(o => o.date && o.date.startsWith(`${y}-${m}`)).reverse();
+
+        if(filtered.length === 0) {
+            container.innerHTML = "<div style='text-align:center;padding:60px;color:#999;'>No orders found.</div>";
+            document.getElementById('month-total').innerText = cpq.settings.currency + " 0";
+            return;
+        }
+
+        container.innerHTML = `<table><thead><tr><th>Date</th><th>Customer Contact</th><th>Items & Qty</th><th style="width:140px;">Total Amount</th><th style="width:160px;">Action</th></tr></thead>
+            <tbody>${filtered.map((o) => {
+                const priceNum = parseFloat(o.price.replace(/[^0-9.]/g,'')) || 0;
+                monthlySum += priceNum;
+                const isFollowed = o.status === 'followed';
+                const cur = cpq.settings.currency;
+                
+                // WhatsApp 话术
+                const msg = encodeURIComponent(`Hi ${o.name}, I'm from ${cpq.settings.brand_name}. I received your quote request for ${o.items[0].desc} with Total ${o.price}. Can I help you?`);
+                
+                // Gmail 网页版链接（带收件人和主题）
+                const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${o.email}&su=${encodeURIComponent('Quotation from ' + cpq.settings.brand_name)}`;
+
+                let itemsHtml = (o.items || []).map(it => `<div style="font-size:12px; border-bottom:1px solid #f5f5f5; padding:6px 0; display:flex; justify-content:space-between;"><div><strong>${it.desc}</strong><br><small>${cur}${(it.unit_price||it.price).toLocaleString()} x ${it.qty||1}</small></div><div style="font-weight:bold;">${cur}${(it.line_total||(it.price*(it.qty||1))).toLocaleString()}</div></div>`).join('');
+                
+                return `<tr>
+                    <td>${o.date.split('T')[0]}</td>
+                    <td>
+                        <strong>${o.name}</strong><br>
+                        <div style="margin-top:5px; font-size:13px;">
+                            <a href="https://wa.me/${o.phone}?text=${msg}" target="_blank" class="contact-link wa-text">📱 ${o.phone} </a>
+                            <div style="margin-top:5px;"></div>
+                             <a href="${gmailLink}" target="_blank" class="contact-link gm-text">📬 ${o.email}</a>
+                        </div>
+                    </td>
+                    <td>${itemsHtml}</td>
+                    <td style="text-align:right;"><b>${o.price}</b></td>
+                    <td>
+                        <button class="btn" style="width:100%; background:${isFollowed?'#28a745':'#dc3545'}; color:white; font-size:11px;" onclick="toggleOrderStatus(${orders.indexOf(o)})">
+                            ${isFollowed?'✅ FOLLOWED':'⏳ PENDING'}
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('')}</tbody></table>`;
+        document.getElementById('month-total').innerText = cpq.settings.currency + " " + monthlySum.toLocaleString();
+    }
+
+    async function toggleOrderStatus(idx) {
+        orders[idx].status = (orders[idx].status === 'followed') ? 'pending' : 'followed';
+        renderOrders();
+        await fetch(`${API_URL}?type=orders`, { method: "POST", body: JSON.stringify(orders) });
+    }
+
+    async function saveToAzure() {
+        const btn = event.currentTarget; btn.disabled = true; btn.innerText = "Syncing...";
+        cpq.settings.langs = document.getElementById('conf-langs').value.split(',').map(s=>s.trim());
+        cpq.settings.currency = document.getElementById('conf-currency').value;
+        cpq.settings.tax_rate = parseFloat(document.getElementById('conf-tax').value);
+        cpq.settings.brand_name = document.getElementById('conf-brand').value;
+        cpq.settings.notes = {
+            langs: document.getElementById('note-langs').value,
+            catalog: document.getElementById('note-catalog').value,
+            orders: document.getElementById('note-orders').value
+        };
+        try {
+            await Promise.all([
+                fetch(`${API_URL}?type=cpq`, { method: "POST", body: JSON.stringify(cpq) }),
+                fetch(`${API_URL}?type=langs`, { method: "POST", body: JSON.stringify(langs) })
+            ]);
+            document.getElementById('save-status').innerText = "SUCCESSFULLY SYNCED!";
+        } catch(e) { alert("Sync failed!"); }
+        btn.disabled = false; btn.innerText = "SYNC DATA TO AZURE";
+        setTimeout(()=>document.getElementById('save-status').innerText="", 3000);
+    }
+    load();
+</script>
+</body>
+</html>
