@@ -15,7 +15,7 @@ $method  = $_SERVER["REQUEST_METHOD"];
 $type = isset($_GET['type']) ? $_GET['type'] : 'orders';
 
 /**
- * 💡 1. 扩展允许的文件类型：增加 'langs'
+ * 💡 1. 允许的文件类型
  */
 $allowedFiles = ['orders', 'cpq', 'langs']; 
 
@@ -27,10 +27,22 @@ if (!in_array($type, $allowedFiles)) {
 $dataFile = $dataDir . "/" . $type . ".json";
 if (!is_dir($dataDir)) mkdir($dataDir, 0777, true);
 
-// 初始化文件：如果是 orders 存 [], 如果是 cpq 或 langs 存 {}
+/**
+ * 💡 2. 初始化文件：给前端准备好它需要的“零件”，防止 JS 崩溃
+ */
 if (!file_exists($dataFile)) {
-    $initial = ($type === 'orders') ? [] : ["_init" => true];
-    file_put_contents($dataFile, json_encode($initial));
+    if ($type === 'orders') {
+        $initial = []; 
+    } elseif ($type === 'cpq') {
+        // 预设 CPQ 必备结构
+        $initial = ["brand_name" => "New Project", "currency" => "$", "tax" => "0", "products" => []];
+    } elseif ($type === 'langs') {
+        // 预设语言包必备结构
+        $initial = ["en" => "English"];
+    } else {
+        $initial = ["_init" => true];
+    }
+    file_put_contents($dataFile, json_encode($initial, JSON_PRETTY_PRINT));
 }
 
 // --- 处理 GET ---
@@ -49,13 +61,12 @@ if ($method === "POST") {
 
     if ($type === 'cpq' || $type === 'langs') {
         /**
-         * 💡 2. 策略与语言包永远执行 [全量覆盖]
-         * 这样 Admin 无论修改了哪个词或哪个价格，直接一键同步全量数据。
+         * 💡 策略与语言包执行 [全量覆盖]
          */
         $finalData = $input;
     } else if ($type === 'orders') {
         if (isset($input[0])) {
-            $finalData = $input; // Admin 批量更新订单状态
+            $finalData = $input; // Admin 批量更新
         } else {
             $currentData = json_decode(file_get_contents($dataFile), true) ?: [];
             $input["server_time"] = date("Y-m-d H:i:s");
