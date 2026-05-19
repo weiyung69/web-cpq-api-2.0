@@ -17,26 +17,22 @@
         .tab-btn.active { background: var(--azure); color: white; }
         .panel { display: none; }
         .panel.active { display: block; }
-        .tag-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .tag { padding: 4px 10px; background: #f3f2f1; border-radius: 15px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; }
-        .tag.active { background: var(--tag-bg); color: var(--tag-text); border-color: var(--azure); font-weight: bold; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .tag { padding: 6px 12px; background: #f3f2f1; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid #ddd; transition: 0.2s; font-weight: bold; }
+        .tag.active { background: var(--tag-bg); color: var(--tag-text); border-color: var(--azure); }
         .prod-card { border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 20px; position: relative; }
         .prod-header { display: grid; grid-template-columns: 1.5fr 1fr 80px auto; gap: 15px; margin-bottom: 15px; align-items: start; }
         .price-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-bottom: 8px; background: #faf9f8; padding: 8px; border-radius: 4px; }
         table { width: 100%; border-collapse: collapse; background: white; }
         th { background: #f3f2f1; padding: 12px; border: 1px solid var(--border); font-size: 12px; text-align: left; }
         td { border: 1px solid var(--border); padding: 12px; vertical-align: top; }
-
-        /* ✨ 修改后的链接样式 */
         .contact-link { text-decoration: none; color: var(--azure); font-size: 13px; display: block; margin-top: 3px; }
         .contact-link:hover { text-decoration: underline; }
         .wa-text { color: #128C7E; font-weight: bold; }
         .gm-text { color: #DB4437; font-weight: bold; }
-
         .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; }
         .btn-primary { background: var(--azure); color: white; }
         .btn-danger { color: var(--danger); background: none; border: 1px solid var(--danger); }
-        
         .filter-bar { background:#f3f2f1; padding:15px; margin-bottom:15px; border-radius:4px; display:flex; gap:15px; align-items:center; font-size:13px; }
         .footer { position: sticky; bottom: 0; background: white; padding: 20px; border-top: 1px solid #ddd; text-align: right; margin-top: 20px; z-index: 10; }
         .note-area { background: #fff4ce; padding: 10px; border-radius: 4px; border-left: 4px solid #ffb900; margin-bottom: 15px; }
@@ -65,7 +61,7 @@
     <div id="panel-langs" class="panel active">
         <div class="note-area">
             <label>📝 LIBRARY OPERATION NOTE</label>
-            <textarea id="note-langs" placeholder="Enter notes for Operation here..."></textarea>
+            <textarea id="note-langs" placeholder="Enter notes..."></textarea>
         </div>
         <table id="lang-table">
             <thead id="lang-head"></thead>
@@ -77,7 +73,7 @@
     <div id="panel-catalog" class="panel">
         <div class="note-area">
             <label>📝 PRODUCT CONFIG OPERATION NOTE</label>
-            <textarea id="note-catalog" placeholder="Enter notes for Operation here..."></textarea>
+            <textarea id="note-catalog" placeholder="Enter notes..."></textarea>
         </div>
         <div id="catalog-list"></div>
         <button class="btn btn-primary" style="width:100%; padding:20px; border:2px dashed var(--azure); background:white; color:var(--azure);" onclick="addProd()">+ Add New Product Category</button>
@@ -86,7 +82,7 @@
     <div id="panel-orders" class="panel">
         <div class="note-area">
             <label>📝 SALES VIEW OPERATION NOTE</label>
-            <textarea id="note-orders" placeholder="Enter notes for Operation here..."></textarea>
+            <textarea id="note-orders" placeholder="Enter notes..."></textarea>
         </div>
         <div class="filter-bar">
             <label>Year:</label><select id="sel-year" onchange="renderOrders()"></select>
@@ -97,7 +93,7 @@
     </div>
 
     <div class="footer">
-        <span id="save-status" style="margin-right:20px; font-weight:bold; color:var(--success);"></span>
+        <span id="save-status" style="margin-right:20px; font-weight:bold; color:green;"></span>
         <button class="btn btn-primary" style="padding:12px 30px;" onclick="saveToAzure()">SYNC DATA TO AZURE</button>
     </div>
 </div>
@@ -117,8 +113,7 @@
         ]);
         cpq = await r1.json(); 
         langs = await r2.json(); 
-        const rawOrders = await r3.json();
-        orders = Array.isArray(rawOrders) ? rawOrders : []; 
+        orders = await r3.json() || []; 
 
         document.getElementById('conf-langs').value = cpq.settings.langs.join(',');
         document.getElementById('conf-currency').value = cpq.settings.currency;
@@ -159,9 +154,15 @@
     function renderCatalog() {
         const container = document.getElementById('catalog-list');
         container.innerHTML = "";
+        
+        // 💡 抓取所有以 SEG_ 开头的标签 (忽略前后空格，忽略大小写)
+        const allSegTags = Object.keys(langs).filter(k => k.trim().toUpperCase().startsWith('SEG_'));
+        
         Object.keys(cpq.catalog).sort((a,b)=>cpq.catalog[a].sort - cpq.catalog[b].sort).forEach(id => {
             const p = cpq.catalog[id];
             const card = document.createElement('div'); card.className = 'prod-card';
+            const activeSegs = p.segments || [];
+
             card.innerHTML = `
                 <div class="prod-header">
                     <div><label>PRODUCT ID</label><input type="text" value="${id}" onblur="renameProd('${id}', this.value)"></div>
@@ -173,6 +174,18 @@
                     <div><label>SORT</label><input type="number" value="${p.sort||0}" onchange="cpq.catalog['${id}'].sort=parseInt(this.value)"></div>
                     <button class="btn-danger" onclick="deleteProd('${id}')">DELETE</button>
                 </div>
+                
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:11px; font-weight:bold; color:#666;">APPLICABLE SEGMENTS (SEG_):</label>
+                    <div class="tag-container">
+                        ${allSegTags.length > 0 ? allSegTags.map(tag => `
+                            <div class="tag ${activeSegs.includes(tag)?'active':''}" onclick="toggleTag('${id}','${tag}')">
+                                ${tag}
+                            </div>
+                        `).join('') : '<span style="color:#999;font-size:11px;">No SEG_ keys found in Library</span>'}
+                    </div>
+                </div>
+
                 <div id="items-${id}">${Object.entries(p.items).map(([n,v]) => `
                     <div class="price-row">
                         <input type="text" value="${n}" onblur="renameSlot('${id}','${n}',this.value)">
@@ -208,7 +221,6 @@
         for(let i=1; i<=12; i++) sm.innerHTML += `<option value="${i}" ${i===(now.getMonth()+1)?'selected':''}>${i<10?'0'+i:i}</option>`;
     }
 
-    // ✨ 这里的渲染逻辑修改：显示文本号码/Email，a 标签直接跳转 Gmail/WA
     function renderOrders() {
         const y = document.getElementById('sel-year').value;
         const m = document.getElementById('sel-month').value.padStart(2, '0');
@@ -222,38 +234,21 @@
             return;
         }
 
-        container.innerHTML = `<table><thead><tr><th>Date</th><th>Customer Contact</th><th>Items & Qty</th><th style="width:140px;">Total Amount</th><th style="width:160px;">Action</th></tr></thead>
+        container.innerHTML = `<table><thead><tr><th>Date</th><th>Customer Contact</th><th>Items & Qty</th><th>Amount</th><th>Action</th></tr></thead>
             <tbody>${filtered.map((o) => {
                 const priceNum = parseFloat(o.price.replace(/[^0-9.]/g,'')) || 0;
                 monthlySum += priceNum;
                 const isFollowed = o.status === 'followed';
-                const cur = cpq.settings.currency;
-                
-                // WhatsApp 话术
-                const msg = encodeURIComponent(`Hi ${o.name}, I'm from ${cpq.settings.brand_name}. I received your quote request for ${o.items[0].desc} with Total ${o.price}. Can I help you?`);
-                
-                // Gmail 网页版链接（带收件人和主题）
                 const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${o.email}&su=${encodeURIComponent('Quotation from ' + cpq.settings.brand_name)}`;
-
-                let itemsHtml = (o.items || []).map(it => `<div style="font-size:12px; border-bottom:1px solid #f5f5f5; padding:6px 0; display:flex; justify-content:space-between;"><div><strong>${it.desc}</strong><br><small>${cur}${(it.unit_price||it.price).toLocaleString()} x ${it.qty||1}</small></div><div style="font-weight:bold;">${cur}${(it.line_total||(it.price*(it.qty||1))).toLocaleString()}</div></div>`).join('');
-                
                 return `<tr>
                     <td>${o.date.split('T')[0]}</td>
-                    <td>
-                        <strong>${o.name}</strong><br>
-                        <div style="margin-top:5px; font-size:13px;">
-                            <a href="https://wa.me/${o.phone}?text=${msg}" target="_blank" class="contact-link wa-text">📱 ${o.phone} </a>
-                            <div style="margin-top:5px;"></div>
-                             <a href="${gmailLink}" target="_blank" class="contact-link gm-text">📬 ${o.email}</a>
-                        </div>
+                    <td><strong>${o.name}</strong><br>
+                        <a href="https://wa.me/${o.phone}" target="_blank" class="contact-link wa-text">📱 ${o.phone}</a>
+                        <a href="${gmailLink}" target="_blank" class="contact-link gm-text">📬 ${o.email}</a>
                     </td>
-                    <td>${itemsHtml}</td>
+                    <td>${(o.items||[]).map(it => `<div>${it.desc} x ${it.qty}</div>`).join('')}</td>
                     <td style="text-align:right;"><b>${o.price}</b></td>
-                    <td>
-                        <button class="btn" style="width:100%; background:${isFollowed?'#28a745':'#dc3545'}; color:white; font-size:11px;" onclick="toggleOrderStatus(${orders.indexOf(o)})">
-                            ${isFollowed?'✅ FOLLOWED':'⏳ PENDING'}
-                        </button>
-                    </td>
+                    <td><button class="btn" style="width:100%; background:${isFollowed?'#28a745':'#dc3545'}; color:white;" onclick="toggleOrderStatus(${orders.indexOf(o)})">${isFollowed?'✅ FOLLOWED':'⏳ PENDING'}</button></td>
                 </tr>`;
             }).join('')}</tbody></table>`;
         document.getElementById('month-total').innerText = cpq.settings.currency + " " + monthlySum.toLocaleString();
@@ -271,18 +266,12 @@
         cpq.settings.currency = document.getElementById('conf-currency').value;
         cpq.settings.tax_rate = parseFloat(document.getElementById('conf-tax').value);
         cpq.settings.brand_name = document.getElementById('conf-brand').value;
-        cpq.settings.notes = {
-            langs: document.getElementById('note-langs').value,
-            catalog: document.getElementById('note-catalog').value,
-            orders: document.getElementById('note-orders').value
-        };
-        try {
-            await Promise.all([
-                fetch(`${API_URL}?type=cpq`, { method: "POST", body: JSON.stringify(cpq) }),
-                fetch(`${API_URL}?type=langs`, { method: "POST", body: JSON.stringify(langs) })
-            ]);
-            document.getElementById('save-status').innerText = "SUCCESSFULLY SYNCED!";
-        } catch(e) { alert("Sync failed!"); }
+        cpq.settings.notes = { langs: document.getElementById('note-langs').value, catalog: document.getElementById('note-catalog').value, orders: document.getElementById('note-orders').value };
+        await Promise.all([
+            fetch(`${API_URL}?type=cpq`, { method: "POST", body: JSON.stringify(cpq) }),
+            fetch(`${API_URL}?type=langs`, { method: "POST", body: JSON.stringify(langs) })
+        ]);
+        document.getElementById('save-status').innerText = "SUCCESSFULLY SYNCED!";
         btn.disabled = false; btn.innerText = "SYNC DATA TO AZURE";
         setTimeout(()=>document.getElementById('save-status').innerText="", 3000);
     }
