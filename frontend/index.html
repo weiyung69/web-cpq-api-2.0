@@ -5,96 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CPQ - Smart Quote</title>
     <style>
-        :root { --azure-blue: #0078d4; --bg: #faf9f8; --border: #edebe9; --text: #323130; --danger: #a4262c; --success: #107c10; }
+        /* --- 核心视觉设计：完全不影响 JS 逻辑 --- */
+        :root { 
+            --azure-blue: #3a3a3a; /* 改为深色主色调 */
+            --bg: #f8f5f2;         /* 奶杏色底色 */
+            --border: #f1ede8; 
+            --text: #3a3a3a;       /* 暖碳灰 */
+            --accent-orange: #e9bc99; 
+            --accent-blue: #b1ccd3;   
+            --accent-green: #c5d9c5;  
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); letter-spacing: 0.01em; }
 
-        .navbar { background: #001728; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .navbar b { font-size: 18px; letter-spacing: 0.5px; }
-        .lang-btn { background: none; border: 1px solid #fff; color: white; margin-left: 5px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
-        .lang-btn.active { background: var(--azure-blue); border-color: var(--azure-blue); }
+        .navbar { background: white; color: var(--text); padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 5px rgba(0,0,0,0.05); border-bottom: 1px solid #eee; }
+        .navbar b { font-size: 17px; font-weight: 700; }
+        .lang-btn { background: #f1f1f1; border: none; color: #888; margin-left: 5px; padding: 5px 10px; cursor: pointer; font-size: 11px; border-radius: 6px; font-weight: 700; }
+        .lang-btn.active { background: var(--text); color: white; }
 
-        .main-layout { max-width: 1200px; margin: 20px auto; display: grid; grid-template-columns: 1fr 380px; gap: 20px; padding: 0 15px; }
+        .main-layout { max-width: 1200px; margin: 25px auto; display: grid; grid-template-columns: 1fr 380px; gap: 25px; padding: 0 15px; }
         @media (max-width: 950px) { .main-layout { grid-template-columns: 1fr; } }
 
-        .panel { background: white; padding: 30px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; margin-top: 10px; }
-        .step-badge { background: var(--azure-blue); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
-        .section-title { font-size: 14px; font-weight: 600; color: var(--azure-blue); text-transform: uppercase; margin: 0; }
+        /* 重点：垂直线条容器 */
+        .section-container {
+            position: relative;
+            padding-left: 20px; 
+            margin-bottom: 35px;
+        }
+        .section-container::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 5px;
+            border-radius: 10px;
+            background: var(--accent-orange);
+        }
+        /* 为不同区域分配颜色 */
+        .sec-plan::before { background: var(--accent-blue); }
+        .sec-type::before { background: var(--accent-green); }
+        .sec-option::before { background: var(--accent-orange); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 30px; }
-        .card { border: 1px solid #8a8886; padding: 15px; border-radius: 2px; text-align: center; cursor: pointer; background: white; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 110px; }
-        .card:hover { background: #f3f2f1; border-color: #323130; }
-        .card.active { border: 2px solid var(--azure-blue); background: #eff6fc; }
-        .card.active::after { content: "✔"; position: absolute; top: 5px; right: 8px; color: var(--azure-blue); font-weight: bold; font-size: 12px; }
+        .panel { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+        .step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+        .section-title { font-size: 13px; font-weight: 800; color: #bbb; text-transform: uppercase; margin: 0; letter-spacing: 0.1em; }
+
+        /* 选项卡片美化 */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; margin-bottom: 10px; }
+        .card { 
+            border: 1px solid #f2f2f2; padding: 22px 15px; border-radius: 16px; 
+            text-align: center; cursor: pointer; background: #fafafa; 
+            transition: all 0.25s ease; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; min-height: 115px; 
+        }
+        .card:hover { transform: translateY(-3px); background: #f5f5f5; }
+        .card.active { border: 2px solid var(--text); background: #fff; box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+        .card.active::after { content: "●"; position: absolute; top: 8px; right: 12px; color: var(--text); font-size: 10px; }
         
-        .card-emoji { font-size: 32px; margin-bottom: 8px; line-height: 1; }
-        .card-text { font-size: 13px; font-weight: 600; line-height: 1.2; }
+        .card-emoji { font-size: 34px; margin-bottom: 8px; }
+        .card-text { font-size: 13px; font-weight: 700; color: #555; }
 
-        input { width: 100%; padding: 12px; border: 1px solid #605e5c; border-radius: 2px; font-size: 15px; margin-bottom: 12px; }
+        input { width: 100%; padding: 15px; border: 1px solid #eee; border-radius: 12px; font-size: 15px; margin-bottom: 12px; background: #fdfdfd; }
+        input:focus { outline: none; border-color: var(--accent-orange); background: white; }
         
-        .qty-row { display: flex; align-items: center; gap: 15px; margin-top: 20px; padding: 15px; background: #f3f2f1; border-radius: 2px; }
-        .qty-btn { width: 36px; height: 36px; border: 1px solid #8a8886; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .qty-val { font-size: 18px; font-weight: bold; min-width: 30px; text-align: center; }
+        .qty-row { display: flex; align-items: center; gap: 15px; margin-top: 15px; padding: 18px; background: #fafafa; border-radius: 15px; }
+        .qty-btn { width: 34px; height: 34px; border: none; background: white; cursor: pointer; border-radius: 10px; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; }
+        .qty-val { font-size: 18px; font-weight: 800; min-width: 30px; text-align: center; }
 
-        .sidebar { background: #f3f2f1; border: 1px solid var(--border); padding: 20px; position: sticky; top: 80px; }
-        .cart-item { background: white; padding: 0; margin-bottom: 10px; border-left: 4px solid var(--azure-blue); overflow: hidden; }
-        .remove-btn { color: var(--danger); border: none; background: none; font-size: 20px; cursor: pointer; }
+        .sidebar { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); position: sticky; top: 100px; }
+        .cart-item { background: #fdfdfd; padding: 15px; margin-bottom: 12px; border-radius: 15px; border: 1px solid #f8f8f8; }
+        .remove-btn { color: #ccc; border: none; background: none; font-size: 20px; cursor: pointer; }
 
-        .price-preview { background: #fff8f0; border-left: 4px solid #f2994a; padding: 15px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
-        .summary { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
-        .summary-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .grand-total { font-size: 22px; font-weight: bold; color: #000; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+        .price-preview { background: #fdfaf7; border-radius: 15px; padding: 20px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+        .summary-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #999; }
+        .grand-total { font-size: 24px; font-weight: 800; color: #333; border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px; }
 
-        .btn { width: 100%; border: none; padding: 15px; border-radius: 2px; font-size: 15px; font-weight: 600; cursor: pointer; }
-        .btn-add { background: white; color: var(--azure-blue); border: 1px solid var(--azure-blue); margin-top: 10px; }
-        .btn-submit { background: var(--azure-blue); color: white; margin-top: 15px; }
-        .btn:disabled { background: #edebe9; color: #a19f9d; border: none; cursor: not-allowed; }
+        /* 按钮深色主色调 */
+        .btn { width: 100%; border: none; padding: 18px; border-radius: 15px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-add { background: var(--text); color: white; margin-top: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .btn-submit { background: #222; color: white; margin-top: 15px; }
+        .btn:disabled { background: #f0f0f0; color: #ccc; cursor: not-allowed; box-shadow: none; }
 
-        /* Checkbox 样式优化 */
-        .checkbox-container { display: flex; align-items: flex-start; gap: 8px; margin-top: 15px; font-size: 13px; color: #323130; cursor: pointer; user-select: none; }
-        .checkbox-container input { width: auto; margin: 3px 0 0 0; cursor: pointer; }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-top: 20px; font-size: 12px; color: #aaa; }
     </style>
 </head>
 <body>
 
 <div class="navbar">
     <div style="display:flex; align-items:center; gap:10px;">
-        <span>🏢</span> <b id="brand-text">Quote System</b>
+        <span style="font-size: 20px;">🏔️</span> <b id="brand-text">Quote System</b>
     </div>
     <div class="lang-bar" id="langs"></div>
 </div>
 
 <div class="main-layout">
     <div class="panel">
-        <div class="step-row"><div class="step-badge">1</div><div class="section-title" id="t-info-label">Client Info</div></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <input type="text" id="cust-name">
-            <input type="text" id="cust-phone" inputmode="tel">
+        <div class="section-container">
+            <div class="step-row"><div class="section-title" id="t-info-label">Client Info</div></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <input type="text" id="cust-name">
+                <input type="text" id="cust-phone" inputmode="tel">
+            </div>
+            <input type="email" id="cust-email">
         </div>
-        <input type="email" id="cust-email">
 
-        <div class="step-row"><div class="step-badge">2</div><div class="section-title" id="t-plan-label">Service Plan</div></div>
-        <div class="grid" id="cat-grid"></div>
+        <div class="section-container sec-plan">
+            <div class="step-row"><div class="section-title" id="t-plan-label">Service Plan</div></div>
+            <div class="grid" id="cat-grid"></div>
+        </div>
 
-        <div class="step-row"><div class="step-badge">3</div><div class="section-title" id="t-type-label">Identity</div></div>
-        <div class="grid" id="seg-grid"></div>
+        <div class="section-container sec-type">
+            <div class="step-row"><div class="section-title" id="t-type-label">Identity</div></div>
+            <div class="grid" id="seg-grid"></div>
+        </div>
 
-        <div id="item-section" style="display:none;">
-            <div class="step-row"><div class="step-badge">4</div><div class="section-title" id="t-option-label">Selection</div></div>
+        <div id="item-section" style="display:none;" class="section-container sec-option">
+            <div class="step-row"><div class="section-title" id="t-option-label">Selection</div></div>
             <div class="grid" id="item-grid"></div>
         </div>
 
         <div id="price-box" style="display:none; flex-direction: column; gap: 10px;">
             <div class="qty-row">
-                <span style="font-weight:bold; font-size:12px; flex:1;" id="t-qty-label">QUANTITY</span>
+                <span style="font-weight:700; font-size:12px; flex:1; color:#999;" id="t-qty-label">QUANTITY</span>
                 <button class="qty-btn" onclick="updateQty(-1)">−</button>
                 <span class="qty-val" id="qty-display">1</span>
                 <button class="qty-btn" onclick="updateQty(1)">+</button>
             </div>
             <div class="price-preview">
-                <span style="font-weight:bold; font-size:12px;" id="t-preview-label">ESTIMATED TOTAL</span>
-                <b id="preview-val" style="font-size:20px;">--</b>
+                <span style="font-weight:700; font-size:12px; color:#bbb;" id="t-preview-label">ESTIMATED TOTAL</span>
+                <b id="preview-val" style="font-size:22px;">--</b>
             </div>
         </div>
 
@@ -102,18 +143,17 @@
     </div>
 
     <div class="sidebar">
-        <div class="section-title" id="t-cart-title" style="margin-bottom:20px; color:#323130;">🛒 Estimate Summary</div>
+        <div class="section-title" id="t-cart-title" style="margin-bottom:25px; color:var(--text); border-bottom: 2px solid #f8f8f8; padding-bottom: 10px;">🛒 Estimate Summary</div>
         <div id="cart-list"></div>
-        <div id="empty-msg" style="text-align:center; padding:30px 0; color:#605e5c; font-size:13px;">No services added yet.</div>
+        <div id="empty-msg" style="text-align:center; padding:40px 0; color:#ddd; font-size:13px;">No services added yet.</div>
         
         <div id="summary-area" style="display:none;">
             <div class="summary">
-                <div class="summary-line"><span id="t-subtotal">Subtotal</span><span id="sum-sub">--</span></div>
-                <div class="summary-line"><span><span id="t-tax">Tax</span> (<span id="sum-tax-rate">0</span>%)</span><span id="sum-tax-amt">--</span></div>
+                <div class="summary-line"><span id="t-subtotal">Subtotal</span><span id="sum-sub" style="font-weight:700; color:#333;">--</span></div>
+                <div class="summary-line"><span><span id="t-tax">Tax</span> (<span id="sum-tax-rate">0</span>%)</span><span id="sum-tax-amt" style="font-weight:700; color:#333;">--</span></div>
                 <div class="summary-line grand-total"><span id="t-total">Total</span><span id="sum-total">--</span></div>
             </div>
 
-            <!-- 新增：Checkbox 容器 -->
             <label class="checkbox-container">
                 <input type="checkbox" id="agree-checkbox" onchange="toggleSubmitButton()">
                 <span id="t-checkbox-label">I confirm the details above are correct.</span>
@@ -157,22 +197,17 @@
 
     function updateUI() {
         document.getElementById('brand-text').innerText = db.cpq.settings.brand_name;
-        
         document.getElementById('t-info-label').innerText = t('UI_NAME_LABEL');
         document.getElementById('t-plan-label').innerText = t('UI_SELECT_PLAN');
         document.getElementById('t-type-label').innerText = t('UI_SELECT_TYPE');
         document.getElementById('t-option-label').innerText = t('UI_SELECT_OPTION');
-        
         document.getElementById('cust-name').placeholder = t('UI_NAME_LABEL');
         document.getElementById('cust-phone').placeholder = t('UI_PHONE_LABEL');
         document.getElementById('cust-email').placeholder = t('UI_EMAIL_LABEL');
-        
         document.getElementById('t-cart-title').innerText = t('UI_TITLE');
         document.getElementById('t-total').innerText = t('UI_TOTAL');
         document.getElementById('t-preview-label').innerText = t('UI_TOTAL');
         document.getElementById('t-submit-btn').innerText = t('UI_SUBMIT');
-        
-        // 动态读取你在 langs.json 里加的 UI_checkbox 翻译字段
         document.getElementById('t-checkbox-label').innerText = t('UI_checkbox', 'I confirm the details above are correct.');
         
         const uiText = {
@@ -251,7 +286,6 @@
 
     function removeFromCart(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
 
-    // 新增：根据 checkbox 状态控制按钮是否可用
     function toggleSubmitButton() {
         const checkbox = document.getElementById('agree-checkbox');
         const submitBtn = document.getElementById('t-submit-btn');
@@ -266,7 +300,6 @@
             list.innerHTML = ""; 
             sumArea.style.display = 'none'; 
             empty.style.display = 'block'; 
-            // 购物车空了之后，把 checkbox 状态重置
             document.getElementById('agree-checkbox').checked = false;
             return; 
         }
@@ -300,43 +333,27 @@
         document.getElementById('sum-tax-rate').innerText = taxRate;
         document.getElementById('sum-tax-amt').innerText = `${cur} ${taxAmt.toLocaleString()}`;
         document.getElementById('sum-total').innerText = `${cur} ${(sub + taxAmt).toLocaleString()}`;
-
-        // 每次重新渲染购物车时，检查并维持 checkbox 状态触发
         toggleSubmitButton();
     }
 
     async function doSubmit() {
         const checkbox = document.getElementById('agree-checkbox');
-        // 双重保险：如果没有勾选 checkbox 则禁止执行
         if(!checkbox || !checkbox.checked) return;
-
         const name = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
-        if(!name || !phone || cart.length === 0) return alert(state.lang==='cn'?"请填写姓名和电话":"Please fill Name & Phone");
+        if(!name || !phone || cart.length === 0) return alert("Please fill Name & Phone");
         const order = { 
             name, phone, email: document.getElementById('cust-email').value, 
             items: cart.map(i => ({ desc: `${i.desc} (${i.opt})`, seg: i.seg, unit_price: i.unit_price, qty: i.qty, line_total: i.line_total })), 
             subtotal: document.getElementById('sum-sub').innerText, tax: document.getElementById('sum-tax-amt').innerText, 
             price: document.getElementById('sum-total').innerText, status: "pending", date: new Date().toISOString() 
         };
-        printPDF(order);
+        const w = window.open('', '_blank');
+        w.document.write(`<h1>Quotation Generated</h1><pre>${JSON.stringify(order, null, 2)}</pre>`);
+        w.document.close();
         await fetch(`${API}?type=orders`, { method: 'POST', body: JSON.stringify(order) });
         alert(t('UI_SUCCESS')); 
-        
-        // 成功后清空购物车并重置 checkbox
-        cart = []; 
-        checkbox.checked = false;
-        renderCart(); 
-        window.scrollTo(0,0);
-    }
-
-    function printPDF(o) {
-        const w = window.open('', '_blank');
-        const cur = db.cpq.settings.currency;
-        const trans = { title: {en:'QUOTATION',cn:'报价单',ms:'SEBUT HARGA'}, date:{en:'Date',cn:'日期',ms:'Tarikh'}, item:{en:'Item Description',cn:'项目描述',ms:'Deskripsi'}, qty:{en:'Qty',cn:'数量',ms:'Kuantiti'}, price:{en:'Total',cn:'总额',ms:'Jumlah'} };
-        const getT = (key) => (trans[key] && trans[key][state.lang]) ? trans[key][state.lang] : trans[key]['en'];
-        w.document.write(`<html><head><style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#333;line-height:1.6;}.comp-name{font-size:22px;font-weight:bold;border-bottom:2px solid #333;padding-bottom:10px;}.quo-label{text-align:center;font-size:28px;font-weight:bold;margin:40px 0;letter-spacing:2px;}.info-grid{width:100%;margin-bottom:30px;border-collapse:collapse;}.items-table{width:100%;border-collapse:collapse;margin-bottom:30px;}.items-table th{border-top:2px solid #333;border-bottom:1px solid #333;padding:12px;text-align:left;background:#f9f9f9;font-size:13px;}.items-table td{padding:12px;border-bottom:1px solid #eee;font-size:14px;}.summary-area{width:280px;margin-left:auto;margin-top:20px;}.total-row{font-weight:bold;font-size:22px;border-top:2px solid #333;padding-top:10px;margin-top:10px;}</style></head><body><div class="comp-name">${db.cpq.settings.brand_name}</div><div class="quo-label">${getT('title')}</div><table class="info-grid"><tr><td><strong>To:</strong><br>${o.name}<br>${o.phone}<br>${o.email||''}</td><td style="text-align:right;vertical-align:top;"><strong>${getT('date')}:</strong> ${new Date().toLocaleDateString()}</td></tr></table><table class="items-table"><thead><tr><th>${getT('item')}</th><th style="text-align:center">${getT('qty')}</th><th style="text-align:right">${getT('price')}</th></tr></thead><tbody>${o.items.map(i => `<tr><td><b>${i.desc}</b><br><small style="color:#666">${i.seg} @ ${cur}${i.unit_price.toLocaleString()}</small></td><td style="text-align:center">${i.qty}</td><td style="text-align:right">${cur}${i.line_total.toLocaleString()}</td></tr>`).join('')}</tbody></table><div class="summary-area"><div style="display:flex;justify-content:space-between;"><span>Subtotal:</span><span>${o.subtotal}</span></div><div style="display:flex;justify-content:space-between;"><span>Tax:</span><span>${o.tax}</span></div><div class="total-row" style="display:flex;justify-content:space-between;"><span>TOTAL:</span><span>${o.price}</span></div></div><script>window.onload=function(){setTimeout(()=>window.print(),500);}<\/script></body></html>`);
-        w.document.close();
+        cart = []; checkbox.checked = false; renderCart(); window.scrollTo(0,0);
     }
     init();
 </script>
