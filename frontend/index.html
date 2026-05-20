@@ -88,7 +88,27 @@
         .btn-submit { background: #222; color: white; margin-top: 15px; }
         .btn:disabled { background: #f0f0f0; color: #ccc; cursor: not-allowed; box-shadow: none; }
 
-        .checkbox-container { display: flex; gap: 10px; margin-top: 20px; font-size: 12px; color: #aaa; }
+        .checkbox-container { 
+    display: flex; 
+    align-items: flex-start; /* 确保勾选框对齐第一行文本的顶部 */
+    gap: 10px; 
+    margin-top: 25px; 
+    font-size: 13px; 
+    color: #999; 
+    cursor: pointer;
+    text-align: left; /* 强制文本左对齐 */
+}
+
+.checkbox-container input[type="checkbox"] { 
+    width: 18px; 
+    height: 18px; 
+    margin: 0; /* 清除默认外边距 */
+    flex-shrink: 0; /* 防止勾选框被压缩变形 */
+    accent-color: #3a3a3a; /* 变成跟主题一致的碳黑色 */
+    cursor: pointer;
+    position: relative;
+    top: -1px; /* 微调，让它跟文字第一行视觉对齐 */
+}
     </style>
 </head>
 <body>
