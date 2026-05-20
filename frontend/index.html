@@ -50,6 +50,10 @@
         .btn-add { background: white; color: var(--azure-blue); border: 1px solid var(--azure-blue); margin-top: 10px; }
         .btn-submit { background: var(--azure-blue); color: white; margin-top: 15px; }
         .btn:disabled { background: #edebe9; color: #a19f9d; border: none; cursor: not-allowed; }
+
+        /* Checkbox 样式优化 */
+        .checkbox-container { display: flex; align-items: flex-start; gap: 8px; margin-top: 15px; font-size: 13px; color: #323130; cursor: pointer; user-select: none; }
+        .checkbox-container input { width: auto; margin: 3px 0 0 0; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -108,7 +112,14 @@
                 <div class="summary-line"><span><span id="t-tax">Tax</span> (<span id="sum-tax-rate">0</span>%)</span><span id="sum-tax-amt">--</span></div>
                 <div class="summary-line grand-total"><span id="t-total">Total</span><span id="sum-total">--</span></div>
             </div>
-            <button class="btn btn-submit" id="t-submit-btn" onclick="doSubmit()">Generate & Print PDF</button>
+
+            <!-- 新增：Checkbox 容器 -->
+            <label class="checkbox-container">
+                <input type="checkbox" id="agree-checkbox" onchange="toggleSubmitButton()">
+                <span id="t-checkbox-label">I confirm the details above are correct.</span>
+            </label>
+
+            <button class="btn btn-submit" id="t-submit-btn" onclick="doSubmit()" disabled>Generate & Print PDF</button>
         </div>
     </div>
 </div>
@@ -160,6 +171,9 @@
         document.getElementById('t-total').innerText = t('UI_TOTAL');
         document.getElementById('t-preview-label').innerText = t('UI_TOTAL');
         document.getElementById('t-submit-btn').innerText = t('UI_SUBMIT');
+        
+        // 动态读取你在 langs.json 里加的 UI_checkbox 翻译字段
+        document.getElementById('t-checkbox-label').innerText = t('UI_checkbox', 'I confirm the details above are correct.');
         
         const uiText = {
             en: { qty: "QUANTITY", add: "+ Add to Estimate", empty: "No services added yet.", sub: "Subtotal", tax: "Tax" },
@@ -226,7 +240,6 @@
         renderCart(); updateUI();
     }
 
-    // ✨ 这里是修复的核心逻辑：侧边栏购物车加减
     function updateCartQty(id, delta) {
         const item = cart.find(i => i.id === id);
         if (item) {
@@ -238,11 +251,25 @@
 
     function removeFromCart(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
 
+    // 新增：根据 checkbox 状态控制按钮是否可用
+    function toggleSubmitButton() {
+        const checkbox = document.getElementById('agree-checkbox');
+        const submitBtn = document.getElementById('t-submit-btn');
+        submitBtn.disabled = !checkbox.checked;
+    }
+
     function renderCart() {
         const list = document.getElementById('cart-list');
         const sumArea = document.getElementById('summary-area');
         const empty = document.getElementById('empty-msg');
-        if (cart.length === 0) { list.innerHTML = ""; sumArea.style.display = 'none'; empty.style.display = 'block'; return; }
+        if (cart.length === 0) { 
+            list.innerHTML = ""; 
+            sumArea.style.display = 'none'; 
+            empty.style.display = 'block'; 
+            // 购物车空了之后，把 checkbox 状态重置
+            document.getElementById('agree-checkbox').checked = false;
+            return; 
+        }
         empty.style.display = 'none'; sumArea.style.display = 'block';
         const cur = db.cpq.settings.currency;
         
@@ -273,9 +300,16 @@
         document.getElementById('sum-tax-rate').innerText = taxRate;
         document.getElementById('sum-tax-amt').innerText = `${cur} ${taxAmt.toLocaleString()}`;
         document.getElementById('sum-total').innerText = `${cur} ${(sub + taxAmt).toLocaleString()}`;
+
+        // 每次重新渲染购物车时，检查并维持 checkbox 状态触发
+        toggleSubmitButton();
     }
 
     async function doSubmit() {
+        const checkbox = document.getElementById('agree-checkbox');
+        // 双重保险：如果没有勾选 checkbox 则禁止执行
+        if(!checkbox || !checkbox.checked) return;
+
         const name = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         if(!name || !phone || cart.length === 0) return alert(state.lang==='cn'?"请填写姓名和电话":"Please fill Name & Phone");
@@ -287,7 +321,13 @@
         };
         printPDF(order);
         await fetch(`${API}?type=orders`, { method: 'POST', body: JSON.stringify(order) });
-        alert(t('UI_SUCCESS')); cart = []; renderCart(); window.scrollTo(0,0);
+        alert(t('UI_SUCCESS')); 
+        
+        // 成功后清空购物车并重置 checkbox
+        cart = []; 
+        checkbox.checked = false;
+        renderCart(); 
+        window.scrollTo(0,0);
     }
 
     function printPDF(o) {
