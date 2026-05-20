@@ -5,96 +5,225 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CPQ - Smart Quote</title>
     <style>
-        :root { --azure-blue: #0078d4; --bg: #faf9f8; --border: #edebe9; --text: #323130; --danger: #a4262c; --success: #107c10; }
+        /* --- 小红书微拟物色系 --- */
+        :root { 
+            --azure-blue: #5b85aa; /* 调低了饱和度，更高级 */
+            --bg: #fdfaf7;         /* 奶茶色底色 */
+            --panel-bg: #ffffff;
+            --border: #f1ede8; 
+            --text: #4a4a4a;       /* 柔和深灰 */
+            --danger: #e26d5c; 
+            --success: #84a59d;
+            --accent: #f5cac3;     /* 莫兰迪橘 */
+            --card-shadow: 0 8px 24px rgba(149, 157, 165, 0.1);
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text); }
+        body { 
+            font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 0; 
+            color: var(--text); 
+        }
 
-        .navbar { background: #001728; color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .navbar b { font-size: 18px; letter-spacing: 0.5px; }
-        .lang-btn { background: none; border: 1px solid #fff; color: white; margin-left: 5px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
-        .lang-btn.active { background: var(--azure-blue); border-color: var(--azure-blue); }
+        /* Navbar 调整为简洁柔和色 */
+        .navbar { 
+            background: white; 
+            color: var(--text); 
+            padding: 16px 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .navbar b { font-size: 17px; font-weight: 600; color: #2d2d2d; }
+        
+        .lang-btn { 
+            background: #f5f5f5; border: none; color: #888; 
+            margin-left: 5px; padding: 6px 12px; cursor: pointer; 
+            font-size: 11px; border-radius: 20px; font-weight: 600;
+        }
+        .lang-btn.active { background: var(--azure-blue); color: white; }
 
-        .main-layout { max-width: 1200px; margin: 20px auto; display: grid; grid-template-columns: 1fr 380px; gap: 20px; padding: 0 15px; }
+        /* 布局 */
+        .main-layout { max-width: 1100px; margin: 20px auto; display: grid; grid-template-columns: 1fr 360px; gap: 24px; padding: 0 15px; }
         @media (max-width: 950px) { .main-layout { grid-template-columns: 1fr; } }
 
-        .panel { background: white; padding: 30px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; margin-top: 10px; }
-        .step-badge { background: var(--azure-blue); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
-        .section-title { font-size: 14px; font-weight: 600; color: var(--azure-blue); text-transform: uppercase; margin: 0; }
+        /* 卡片容器 */
+        .panel { 
+            background: var(--panel-bg); 
+            padding: 30px; 
+            border-radius: 24px; 
+            box-shadow: var(--card-shadow); 
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 30px; }
-        .card { border: 1px solid #8a8886; padding: 15px; border-radius: 2px; text-align: center; cursor: pointer; background: white; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 110px; }
-        .card:hover { background: #f3f2f1; border-color: #323130; }
-        .card.active { border: 2px solid var(--azure-blue); background: #eff6fc; }
-        .card.active::after { content: "✔"; position: absolute; top: 5px; right: 8px; color: var(--azure-blue); font-weight: bold; font-size: 12px; }
+        /* 标题与步骤图标 */
+        .step-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; margin-top: 10px; }
+        .step-badge { 
+            background: var(--accent); color: #d48e81; 
+            width: 28px; height: 28px; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; font-weight: 800; 
+        }
+        .section-title { font-size: 16px; font-weight: 700; color: #2d2d2d; margin: 0; }
+
+        /* 选购卡片 - 关键修改 */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .card { 
+            border: 2px solid transparent; 
+            padding: 20px 10px; 
+            border-radius: 18px; 
+            text-align: center; 
+            cursor: pointer; 
+            background: #f9f9f9; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            min-height: 120px; 
+        }
+        .card:hover { transform: translateY(-3px); background: #f3f3f3; }
+        .card.active { 
+            border-color: var(--azure-blue); 
+            background: white; 
+            box-shadow: 0 10px 20px rgba(91, 133, 170, 0.15); 
+        }
+        .card.active::after { 
+            content: "●"; position: absolute; top: 10px; right: 12px; 
+            color: var(--azure-blue); font-size: 10px; 
+        }
         
-        .card-emoji { font-size: 32px; margin-bottom: 8px; line-height: 1; }
-        .card-text { font-size: 13px; font-weight: 600; line-height: 1.2; }
+        .card-emoji { 
+            font-size: 36px; margin-bottom: 12px; 
+            background: white; width: 60px; height: 60px; 
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .card-text { font-size: 13px; font-weight: 600; color: #444; }
 
-        input { width: 100%; padding: 12px; border: 1px solid #605e5c; border-radius: 2px; font-size: 15px; margin-bottom: 12px; }
+        /* 输入框 */
+        input { 
+            width: 100%; padding: 14px 18px; 
+            border: 1px solid #eee; border-radius: 14px; 
+            font-size: 15px; margin-bottom: 12px; 
+            background: #fbfbfb; transition: 0.2s;
+        }
+        input:focus { border-color: var(--azure-blue); background: white; outline: none; }
         
-        .qty-row { display: flex; align-items: center; gap: 15px; margin-top: 20px; padding: 15px; background: #f3f2f1; border-radius: 2px; }
-        .qty-btn { width: 36px; height: 36px; border: 1px solid #8a8886; background: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .qty-val { font-size: 18px; font-weight: bold; min-width: 30px; text-align: center; }
+        /* 数量选择 */
+        .qty-row { 
+            display: flex; align-items: center; gap: 15px; margin-top: 20px; 
+            padding: 18px; background: #fdfaf7; border-radius: 16px; 
+            border: 1px dashed #e5e0d8;
+        }
+        .qty-btn { 
+            width: 32px; height: 32px; border: none; 
+            background: white; cursor: pointer; border-radius: 8px;
+            font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .qty-val { font-size: 18px; font-weight: 800; min-width: 30px; text-align: center; color: var(--azure-blue); }
 
-        .sidebar { background: #f3f2f1; border: 1px solid var(--border); padding: 20px; position: sticky; top: 80px; }
-        .cart-item { background: white; padding: 0; margin-bottom: 10px; border-left: 4px solid var(--azure-blue); overflow: hidden; }
-        .remove-btn { color: var(--danger); border: none; background: none; font-size: 20px; cursor: pointer; }
+        /* 侧边栏/购物车 */
+        .sidebar { background: white; border-radius: 24px; padding: 24px; box-shadow: var(--card-shadow); position: sticky; top: 100px; }
+        .cart-item { 
+            background: #f9f9f9; padding: 4px; margin-bottom: 12px; 
+            border-radius: 16px; border: none; overflow: hidden; 
+        }
+        .remove-btn { color: #ccc; border: none; background: none; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .remove-btn:hover { color: var(--danger); }
 
-        .price-preview { background: #fff8f0; border-left: 4px solid #f2994a; padding: 15px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
-        .summary { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
-        .summary-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .grand-total { font-size: 22px; font-weight: bold; color: #000; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+        /* 价格预览 */
+        .price-preview { 
+            background: #fef6f5; border-radius: 16px; border: none;
+            padding: 20px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; 
+        }
+        .summary { margin-top: 24px; border-top: 1px dashed #eee; padding-top: 20px; }
+        .summary-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #777; }
+        .grand-total { 
+            font-size: 24px; font-weight: 800; color: var(--azure-blue); 
+            border-top: none; padding-top: 5px; margin-top: 15px; 
+        }
 
-        .btn { width: 100%; border: none; padding: 15px; border-radius: 2px; font-size: 15px; font-weight: 600; cursor: pointer; }
-        .btn-add { background: white; color: var(--azure-blue); border: 1px solid var(--azure-blue); margin-top: 10px; }
-        .btn-submit { background: var(--azure-blue); color: white; margin-top: 15px; }
-        .btn:disabled { background: #edebe9; color: #a19f9d; border: none; cursor: not-allowed; }
+        /* 按钮 */
+        .btn { 
+            width: 100%; border: none; padding: 16px; border-radius: 16px; 
+            font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+        .btn-add { 
+            background: #f0f4f8; color: var(--azure-blue); 
+            margin-top: 15px; 
+        }
+        .btn-add:hover { background: var(--azure-blue); color: white; }
+        
+        .btn-submit { 
+            background: var(--azure-blue); color: white; margin-top: 15px; 
+            box-shadow: 0 8px 20px rgba(91, 133, 170, 0.3);
+        }
+        .btn:disabled { background: #eee; color: #bbb; box-shadow: none; }
 
-        /* Checkbox 样式优化 */
-        .checkbox-container { display: flex; align-items: flex-start; gap: 8px; margin-top: 15px; font-size: 13px; color: #323130; cursor: pointer; user-select: none; }
-        .checkbox-container input { width: auto; margin: 3px 0 0 0; cursor: pointer; }
+        /* Checkbox */
+        .checkbox-container { 
+            display: flex; align-items: center; gap: 10px; 
+            margin-top: 20px; font-size: 12px; color: #999; 
+        }
+        .checkbox-container input { width: 16px; height: 16px; margin: 0; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div class="navbar">
     <div style="display:flex; align-items:center; gap:10px;">
-        <span>🏢</span> <b id="brand-text">Quote System</b>
+        <span style="font-size: 20px;">🍯</span> <b id="brand-text">Quote System</b>
     </div>
     <div class="lang-bar" id="langs"></div>
 </div>
 
 <div class="main-layout">
     <div class="panel">
-        <div class="step-row"><div class="step-badge">1</div><div class="section-title" id="t-info-label">Client Info</div></div>
+        <div class="step-row">
+            <div class="step-badge">01</div>
+            <div class="section-title" id="t-info-label">Client Info</div>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <input type="text" id="cust-name">
             <input type="text" id="cust-phone" inputmode="tel">
         </div>
         <input type="email" id="cust-email">
 
-        <div class="step-row"><div class="step-badge">2</div><div class="section-title" id="t-plan-label">Service Plan</div></div>
+        <div class="step-row">
+            <div class="step-badge">02</div>
+            <div class="section-title" id="t-plan-label">Service Plan</div>
+        </div>
         <div class="grid" id="cat-grid"></div>
 
-        <div class="step-row"><div class="step-badge">3</div><div class="section-title" id="t-type-label">Identity</div></div>
+        <div class="step-row">
+            <div class="step-badge">03</div>
+            <div class="section-title" id="t-type-label">Identity</div>
+        </div>
         <div class="grid" id="seg-grid"></div>
 
         <div id="item-section" style="display:none;">
-            <div class="step-row"><div class="step-badge">4</div><div class="section-title" id="t-option-label">Selection</div></div>
+            <div class="step-row">
+                <div class="step-badge">04</div>
+                <div class="section-title" id="t-option-label">Selection</div>
+            </div>
             <div class="grid" id="item-grid"></div>
         </div>
 
         <div id="price-box" style="display:none; flex-direction: column; gap: 10px;">
             <div class="qty-row">
-                <span style="font-weight:bold; font-size:12px; flex:1;" id="t-qty-label">QUANTITY</span>
+                <span style="font-weight:800; font-size:12px; flex:1; color:#a1958a;" id="t-qty-label">QUANTITY</span>
                 <button class="qty-btn" onclick="updateQty(-1)">−</button>
                 <span class="qty-val" id="qty-display">1</span>
                 <button class="qty-btn" onclick="updateQty(1)">+</button>
             </div>
             <div class="price-preview">
-                <span style="font-weight:bold; font-size:12px;" id="t-preview-label">ESTIMATED TOTAL</span>
-                <b id="preview-val" style="font-size:20px;">--</b>
+                <span style="font-weight:700; font-size:13px; color:#d48e81;" id="t-preview-label">ESTIMATED TOTAL</span>
+                <b id="preview-val" style="font-size:22px; color:#d48e81;">--</b>
             </div>
         </div>
 
@@ -102,9 +231,9 @@
     </div>
 
     <div class="sidebar">
-        <div class="section-title" id="t-cart-title" style="margin-bottom:20px; color:#323130;">🛒 Estimate Summary</div>
+        <div class="section-title" id="t-cart-title" style="margin-bottom:24px; font-size:18px;">🛒 Estimate</div>
         <div id="cart-list"></div>
-        <div id="empty-msg" style="text-align:center; padding:30px 0; color:#605e5c; font-size:13px;">No services added yet.</div>
+        <div id="empty-msg" style="text-align:center; padding:40px 0; color:#ccc; font-size:13px;">No services added yet.</div>
         
         <div id="summary-area" style="display:none;">
             <div class="summary">
@@ -113,13 +242,12 @@
                 <div class="summary-line grand-total"><span id="t-total">Total</span><span id="sum-total">--</span></div>
             </div>
 
-            <!-- 新增：Checkbox 容器 -->
             <label class="checkbox-container">
                 <input type="checkbox" id="agree-checkbox" onchange="toggleSubmitButton()">
-                <span id="t-checkbox-label">I confirm the details above are correct.</span>
+                <span id="t-checkbox-label" style="line-height: 1.4;">I confirm the details above.</span>
             </label>
 
-            <button class="btn btn-submit" id="t-submit-btn" onclick="doSubmit()" disabled>Generate & Print PDF</button>
+            <button class="btn btn-submit" id="t-submit-btn" onclick="doSubmit()" disabled>Generate PDF</button>
         </div>
     </div>
 </div>
@@ -142,7 +270,7 @@
     
     function createCardHTML(text, isActive, clickFn) {
         const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
-        let emoji = "😊"; 
+        let emoji = "✨"; 
         let label = text;
         if (emojiRegex.test(text)) {
             const parts = text.split(' ');
@@ -157,22 +285,17 @@
 
     function updateUI() {
         document.getElementById('brand-text').innerText = db.cpq.settings.brand_name;
-        
         document.getElementById('t-info-label').innerText = t('UI_NAME_LABEL');
         document.getElementById('t-plan-label').innerText = t('UI_SELECT_PLAN');
         document.getElementById('t-type-label').innerText = t('UI_SELECT_TYPE');
         document.getElementById('t-option-label').innerText = t('UI_SELECT_OPTION');
-        
         document.getElementById('cust-name').placeholder = t('UI_NAME_LABEL');
         document.getElementById('cust-phone').placeholder = t('UI_PHONE_LABEL');
         document.getElementById('cust-email').placeholder = t('UI_EMAIL_LABEL');
-        
         document.getElementById('t-cart-title').innerText = t('UI_TITLE');
         document.getElementById('t-total').innerText = t('UI_TOTAL');
         document.getElementById('t-preview-label').innerText = t('UI_TOTAL');
         document.getElementById('t-submit-btn').innerText = t('UI_SUBMIT');
-        
-        // 动态读取你在 langs.json 里加的 UI_checkbox 翻译字段
         document.getElementById('t-checkbox-label').innerText = t('UI_checkbox', 'I confirm the details above are correct.');
         
         const uiText = {
@@ -192,7 +315,7 @@
         const segGrid = document.getElementById('seg-grid');
         if (state.cat && selectedProd) {
             segGrid.innerHTML = selectedProd.segments.map(s => createCardHTML(t(s), state.seg === s, `select('seg', '${s}')`)).join('');
-        } else { segGrid.innerHTML = `<div style="grid-column:1/-1; color:#999; text-align:center; padding:10px;">Select Plan First</div>`; }
+        } else { segGrid.innerHTML = `<div style="grid-column:1/-1; color:#ccc; text-align:center; padding:20px; font-size:13px;">Select Plan First</div>`; }
 
         const itemSec = document.getElementById('item-section');
         if (state.cat && state.seg && selectedProd) {
@@ -251,7 +374,6 @@
 
     function removeFromCart(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
 
-    // 新增：根据 checkbox 状态控制按钮是否可用
     function toggleSubmitButton() {
         const checkbox = document.getElementById('agree-checkbox');
         const submitBtn = document.getElementById('t-submit-btn');
@@ -266,7 +388,6 @@
             list.innerHTML = ""; 
             sumArea.style.display = 'none'; 
             empty.style.display = 'block'; 
-            // 购物车空了之后，把 checkbox 状态重置
             document.getElementById('agree-checkbox').checked = false;
             return; 
         }
@@ -275,19 +396,19 @@
         
         list.innerHTML = cart.map(i => `
             <div class="cart-item">
-                <div style="padding:12px; width:100%;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <b>${i.desc} (${i.opt})</b>
+                <div style="padding:16px; width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                        <b style="font-size:14px; color:#333;">${i.desc}</b>
                         <button class="remove-btn" onclick="removeFromCart(${i.id})">×</button>
                     </div>
-                    <small>${i.seg}</small>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                        <div style="display:flex; align-items:center; gap:8px; background:#f3f2f1; padding:2px 8px; border-radius:2px;">
-                            <button onclick="updateCartQty(${i.id}, -1)" style="border:none; background:none; cursor:pointer; font-weight:bold;">-</button>
-                            <span style="font-size:13px; font-weight:bold;">${i.qty}</span>
-                            <button onclick="updateCartQty(${i.id}, 1)" style="border:none; background:none; cursor:pointer; font-weight:bold;">+</button>
+                    <div style="font-size:12px; color:#999; margin-bottom:10px;">${i.opt} | ${i.seg}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:12px; background:white; padding:4px 10px; border-radius:10px;">
+                            <button onclick="updateCartQty(${i.id}, -1)" style="border:none; background:none; cursor:pointer; color:var(--azure-blue); font-weight:bold;">-</button>
+                            <span style="font-size:14px; font-weight:bold;">${i.qty}</span>
+                            <button onclick="updateCartQty(${i.id}, 1)" style="border:none; background:none; cursor:pointer; color:var(--azure-blue); font-weight:bold;">+</button>
                         </div>
-                        <span style="font-weight:bold; color:var(--azure-blue);">${cur}${i.line_total.toLocaleString()}</span>
+                        <span style="font-weight:800; color:var(--azure-blue);">${cur}${i.line_total.toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -300,16 +421,12 @@
         document.getElementById('sum-tax-rate').innerText = taxRate;
         document.getElementById('sum-tax-amt').innerText = `${cur} ${taxAmt.toLocaleString()}`;
         document.getElementById('sum-total').innerText = `${cur} ${(sub + taxAmt).toLocaleString()}`;
-
-        // 每次重新渲染购物车时，检查并维持 checkbox 状态触发
         toggleSubmitButton();
     }
 
     async function doSubmit() {
         const checkbox = document.getElementById('agree-checkbox');
-        // 双重保险：如果没有勾选 checkbox 则禁止执行
         if(!checkbox || !checkbox.checked) return;
-
         const name = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         if(!name || !phone || cart.length === 0) return alert(state.lang==='cn'?"请填写姓名和电话":"Please fill Name & Phone");
@@ -322,12 +439,7 @@
         printPDF(order);
         await fetch(`${API}?type=orders`, { method: 'POST', body: JSON.stringify(order) });
         alert(t('UI_SUCCESS')); 
-        
-        // 成功后清空购物车并重置 checkbox
-        cart = []; 
-        checkbox.checked = false;
-        renderCart(); 
-        window.scrollTo(0,0);
+        cart = []; checkbox.checked = false; renderCart(); window.scrollTo(0,0);
     }
 
     function printPDF(o) {
@@ -335,7 +447,7 @@
         const cur = db.cpq.settings.currency;
         const trans = { title: {en:'QUOTATION',cn:'报价单',ms:'SEBUT HARGA'}, date:{en:'Date',cn:'日期',ms:'Tarikh'}, item:{en:'Item Description',cn:'项目描述',ms:'Deskripsi'}, qty:{en:'Qty',cn:'数量',ms:'Kuantiti'}, price:{en:'Total',cn:'总额',ms:'Jumlah'} };
         const getT = (key) => (trans[key] && trans[key][state.lang]) ? trans[key][state.lang] : trans[key]['en'];
-        w.document.write(`<html><head><style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#333;line-height:1.6;}.comp-name{font-size:22px;font-weight:bold;border-bottom:2px solid #333;padding-bottom:10px;}.quo-label{text-align:center;font-size:28px;font-weight:bold;margin:40px 0;letter-spacing:2px;}.info-grid{width:100%;margin-bottom:30px;border-collapse:collapse;}.items-table{width:100%;border-collapse:collapse;margin-bottom:30px;}.items-table th{border-top:2px solid #333;border-bottom:1px solid #333;padding:12px;text-align:left;background:#f9f9f9;font-size:13px;}.items-table td{padding:12px;border-bottom:1px solid #eee;font-size:14px;}.summary-area{width:280px;margin-left:auto;margin-top:20px;}.total-row{font-weight:bold;font-size:22px;border-top:2px solid #333;padding-top:10px;margin-top:10px;}</style></head><body><div class="comp-name">${db.cpq.settings.brand_name}</div><div class="quo-label">${getT('title')}</div><table class="info-grid"><tr><td><strong>To:</strong><br>${o.name}<br>${o.phone}<br>${o.email||''}</td><td style="text-align:right;vertical-align:top;"><strong>${getT('date')}:</strong> ${new Date().toLocaleDateString()}</td></tr></table><table class="items-table"><thead><tr><th>${getT('item')}</th><th style="text-align:center">${getT('qty')}</th><th style="text-align:right">${getT('price')}</th></tr></thead><tbody>${o.items.map(i => `<tr><td><b>${i.desc}</b><br><small style="color:#666">${i.seg} @ ${cur}${i.unit_price.toLocaleString()}</small></td><td style="text-align:center">${i.qty}</td><td style="text-align:right">${cur}${i.line_total.toLocaleString()}</td></tr>`).join('')}</tbody></table><div class="summary-area"><div style="display:flex;justify-content:space-between;"><span>Subtotal:</span><span>${o.subtotal}</span></div><div style="display:flex;justify-content:space-between;"><span>Tax:</span><span>${o.tax}</span></div><div class="total-row" style="display:flex;justify-content:space-between;"><span>TOTAL:</span><span>${o.price}</span></div></div><script>window.onload=function(){setTimeout(()=>window.print(),500);}<\/script></body></html>`);
+        w.document.write(`<html><head><style>body{font-family:sans-serif;padding:40px;color:#333;}table{width:100%;border-collapse:collapse;margin-bottom:20px;}th{background:#f9f9f9;padding:10px;text-align:left;border-bottom:2px solid #333;}td{padding:10px;border-bottom:1px solid #eee;}.total{font-size:20px;font-weight:bold;text-align:right;}</style></head><body><h1>${db.cpq.settings.brand_name}</h1><h2>${getT('title')}</h2><p>${getT('date')}: ${new Date().toLocaleDateString()}</p><p>Customer: ${o.name} (${o.phone})</p><table><thead><tr><th>${getT('item')}</th><th>${getT('qty')}</th><th>${getT('price')}</th></tr></thead><tbody>${o.items.map(i => `<tr><td>${i.desc}<br><small>${i.seg}</small></td><td>${i.qty}</td><td>${cur}${i.line_total.toLocaleString()}</td></tr>`).join('')}</tbody></table><div class="total">TOTAL: ${o.price}</div><script>window.onload=function(){window.print();}<\/script></body></html>`);
         w.document.close();
     }
     init();
